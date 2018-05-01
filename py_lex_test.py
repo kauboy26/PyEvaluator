@@ -1,6 +1,6 @@
 # have a lexer class that rips tokens out and gives me one at a time
 class MyLexer():
-    def __init__(self, in_str='9 + 9 * 8'):
+    def __init__(self, in_str='26'):
         self.in_str = in_str
         self.token_list = []
 
@@ -12,7 +12,6 @@ class MyLexer():
     def get_token(self):
         if not self.token_list:
             self._process_line()
-
         item = self.token_list.pop(0)    
         return item
 
