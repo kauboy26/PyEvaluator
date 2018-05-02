@@ -60,7 +60,7 @@ class MyLexer():
                 while i < length and is_alphanumeric(self.in_str[i]):
                     i = i + 1
                 # At this point, i points to the first next non-alphanumeric character
-                self.token_list.append(('VAR', self.in_str[start_index:i]))
+                self.token_list.append(('ID', self.in_str[start_index:i]))
             elif is_special(self.in_str[i]):
                 self.token_list.append((self.in_str[i], None))
                 i = i + 1
