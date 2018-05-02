@@ -7,3 +7,10 @@ of these features) are:
 * Multi character variable names
 * Pre-defined functions (you can call sin(x), etc)
 * Finally (perhaps a little ambitious, I don't know how to accomplish this) defining and using your own functions.  
+
+## Usage
+You need Python 2.7 on your computer. Run the following:  
+```
+python lex_test_script.py
+```  
+That should start it and you will see a prompt ```>>```. Type in whatever expressions you want, like "```a0 = 1 + 3 * 4```", etc and have a blast.

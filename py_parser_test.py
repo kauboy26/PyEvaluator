@@ -2,22 +2,55 @@ class MyParser():
     def __init__(self):
         # will store the values of variables
         self.variables = {}
-        self.precedence = {'*': 5, '/': 5, '+': 4, '-': 4, 'EOF': 0, '(': 0, ')':0} 
+        self.precedence = {'*': 5, '/': 5, '+': 4, '-': 4, 'EOL': 0, '(': 0, ')':0, '=': 1} 
 
     def perform_operation(self, val1, val2, operation):
+        # Depending on what val1 and val2 are (ints or strings?),
+        # this method does whatever and checks the validity of that
+        # expression. However, I don't know if checking their types
+        # is the most elegant or efficient way of going about this.
+        val1_is_str = type(val1) == str
+        val2_is_str = type(val2) == str
+
+        if val1_is_str:
+            if val1 in self.variables:
+                value1 = self.variables[val1]
+            else:
+                self.variables[val1] = 0
+                value1 = 0
+        else:
+            value1 = val1
+
+        if val2_is_str:
+            if val2 in self.variables:
+                value2 = self.variables[val2]
+            else:
+                self.variables[val2] = 0
+                value2 = 0
+        else:
+            value2 = val2
+
+        if operation == '=':
+            if not val1_is_str:
+                print 'Cannot assign value to a number'
+                return 999
+            else:
+                self.variables[val1] = value2
+                return value2
+
         if operation == '*':
-            return val1 * val2
+            return value1 * value2
         elif operation == '+':
-            return val1 + val2
+            return value1 + value2
         elif operation == '/':
-            return val1 / val2
+            return value1 / value2
         elif operation == '-':
-            return val1 - val2
+            return value1 - value2
 
         print 'Bad operand!'
-        exit(1)
+        return 999
 
-    def parse(self, tk_list=[('EOF', None)]):
+    def parse(self, tk_list=[('EOL', None)]):
         op_stack = []
         num_stack = []
         precedence = self.precedence
@@ -25,7 +58,7 @@ class MyParser():
         i =0
         while i < len(tk_list):
             tk_type, value = tk_list[i]
-            if tk_type == 'NUM':
+            if tk_type == 'NUM' or tk_type == 'ID':
                 num_stack.append(value)
             else:
                 if tk_type == '(':
@@ -43,7 +76,7 @@ class MyParser():
 
                     if not op_stack:
                         print 'Mismatched parens.'
-                        exit(2)
+                        return 999
                     else:
                         op_stack.pop()
                         i = i + 1
@@ -68,9 +101,17 @@ class MyParser():
         if num_stack:
             if len(num_stack) > 1:
                 print 'Not enough operators?'
-                return 0
+                return 999
             else:
-                return num_stack.pop()
+                result = num_stack.pop()
+                if type(result) == str:
+                    if result in self.variables:
+                        return self.variables[result]
+                    else:
+                        print 'Has this variable been defined? :', result 
+                        return 999
+                else:
+                    return result
         else:
             print 'Faulty expression!'
-            return 0
+            return 999

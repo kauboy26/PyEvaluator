@@ -1,10 +1,22 @@
 from py_lex_test import MyLexer
 from py_parser_test import MyParser
+import sys
 
-in_str = '18 + 8 * 9 - (1 - 1) - 9 * 3'
 
-lexer = MyLexer(in_str)
-
+lexer = MyLexer()
 parser = MyParser()
 
-print 'Result:', parser.parse(lexer.get_token_list())
+line = '0'
+
+while line:
+    try:
+        print parser.parse(lexer.get_token_list(line))
+        line = raw_input('>>  ')
+    except:
+        print 'Dumping all values:'
+        for ident, value in parser.variables.iteritems():
+            print ident, '=', value
+        exit(0)
+
+
+
