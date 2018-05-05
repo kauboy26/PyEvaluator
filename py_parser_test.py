@@ -5,64 +5,39 @@ class MyParser():
     def __init__(self):
         # will store the values of variables
         self.variables = {}
-        self.precedence = {'*': 5, '/': 5, '%':5, '+': 4, '-': 4, 'EOL': 0, '(': 0, ')':0, '=': 1} 
+        self.precedence =\
+            {'*': 50, '/': 50, '%':50, '+': 40, '-': 40,
+            'sin': 60, 'sqrt': 60, 'pow': 60,   # include special functions like these
+            '(': 0, ')':0, '=': 10,
+            'EOL':0}
 
-    def perform_operation(self, val1, val2, operation):
-        # Depending on what val1 and val2 are (ints or strings?),
-        # this method does whatever and checks the validity of that
-        # expression. However, I don't know if checking their types
-        # is the most elegant or efficient way of going about this.
-        val1_is_str = type(val1) == str
-        val2_is_str = type(val2) == str
+        # denotes the number of arguments needed when that function is performed.
+        self.args_needed =\
+            {'*': 2, '/': 2, '%':2, '+': 2, '-': 2, '=': 2,
+            'sin':1, 'sqrt': 1, 'pow':2}
 
-        if operation == '=':
-            if not val1_is_str:
-                print 'Cannot assign value to a number'
-                return FAILURE, None
-            else:
-                if not val2_is_str:
-                    self.variables[val1] = val2
-                    return SUCCESS, val2
-                else:
-                    if val2 not in self.variables:
-                        print 'The variable', val2, 'has not been defined.'
-                        return FAILURE, None
-                    else:
-                        self.variables[val1] = self.variables[val2]
-                        return SUCCESS, self.variables[val2]
+        self.functions = {'sin':0, 'sqrt':0, 'pow':0}
 
-        # Since the '=' operator is the only operator in which one of the variables (the left hand one)
-        # is allowed to not exist, from this point onwards, all the operations will require both to exist
-        if val1_is_str:
-            if val1 not in self.variables:
-                print 'The variable', val1, 'has not been defined'
-                return FAILURE, None
-            else:
-                value1 = self.variables[val1]
-        else:
-            value1 = val1
-
-        if val2_is_str:
-            if val2 not in self.variables:
-                print 'The variable', val2, 'has not been defined'
-                return FAILURE, None
-            else:
-                value2 = self.variables[val2]
-        else:
-            value2 = val2
-
-        result = 0
+    def perform_operation(self, operands, operation):
+        # The operands MUST be passed in reverse order!
+        # eg. operands = [1, 2], operation = '-' will perform 2 - 1
 
         if operation == '*':
-            result = value1 * value2
+            result = operands[1] * operands[0]
         elif operation == '+':
-            result = value1 + value2
+            result = operands[1] + operands[0]
         elif operation == '/':
-            result = value1 / value2
+            if operands[0] == 0:
+                print 'Cannot divide by 0.'
+                return FAILURE, None
+            result = operands[1] / operands[0]
         elif operation == '-':
-            result = value1 - value2
+            result = operands[1] - operands[0]
         elif operation == '%':
-            result = value1 % value2
+            if operands[0] == 0:
+                print 'Cannot modulo by 0.'
+                return FAILURE, None
+            result = operands[1] % operands[0]
 
         return SUCCESS, result
 
@@ -74,7 +49,10 @@ class MyParser():
         i =0
         while i < len(tk_list):
             tk_type, value = tk_list[i]
-            if tk_type == 'NUM' or tk_type == 'ID':
+            if tk_type == 'NUM':
+                num_stack.append(value) # TODO Shall I convert this to a float?
+            elif tk_type == 'ID':
+                # The token may be a function, so make sure it isn't
                 num_stack.append(value)
             else:
                 if tk_type == '(':
@@ -84,12 +62,50 @@ class MyParser():
 
                 if tk_type == ')':
                     while op_stack and op_stack[-1] != '(':
-                        val2 = num_stack.pop()
-                        val1 = num_stack.pop()
                         operation = op_stack.pop()
-                        was_success, new_val = self.perform_operation(val1, val2, operation)
+                        if len(num_stack) < self.args_needed[operation]:
+                            print 'Not enough arguments!'
+                            return None
+
+
+                        # See note 1 from notes.md, for why '=' is being tested
+                        # here an not in perform_operation
+                        if operation == '=':
+                            val2 = num_stack.pop()
+                            val1 = num_stack.pop()
+                            if type(val1) == str:
+                                if type(val2) == str:
+                                    if val2 in self.variables:
+                                        self.variables[val1] = self.variables[val2]
+                                        return self.variables[val2]
+                                    else:
+                                        print 'The variable', val2, 'has not been defined.'
+                                        return None
+                                else:
+                                    self.variables[val1] = val2
+                                    return val2
+                            else:
+                                print 'Cannot assign a value to a non-variable.'
+                                return None
+
+
+                        # Now for other operations, pass in a list of operand values
+                        operands = []
+                        for j in xrange(self.args_needed[operation]):
+                            oper = num_stack.pop()
+                            if type(oper) == str:
+                                if oper in self.variables:
+                                    # The operands are being passed in reverse order
+                                    operands.append(self.variables[oper])
+                                else:
+                                    print 'The variable', oper, 'has not been defined.'
+                                    return None
+                            else:
+                                operands.append(oper)
+                        
+                        was_success, new_val = self.perform_operation(operands, operation)
+
                         if not was_success:
-                            # Happens when operators had a bust
                             return None
                         num_stack.append(new_val)
 
@@ -106,12 +122,50 @@ class MyParser():
                     # if it has a lower precedence then the topmost thing
                     # on the operand stack, keep popping off the num and op stacks
                     # and evaluate and push
-                    val2 = num_stack.pop()
-                    val1 = num_stack.pop()
                     operation = op_stack.pop()
-                    was_success, new_val = self.perform_operation(val1, val2, operation)
+                    if len(num_stack) < self.args_needed[operation]:
+                        print 'Not enough arguments!'
+                        return None
+
+
+                    # See note 1 from notes.md, for why '=' is being tested
+                    # here an not in perform_operation
+                    if operation == '=':
+                        val2 = num_stack.pop()
+                        val1 = num_stack.pop()
+                        if type(val1) == str:
+                            if type(val2) == str:
+                                if val2 in self.variables:
+                                    self.variables[val1] = self.variables[val2]
+                                    return self.variables[val2]
+                                else:
+                                    print 'The variable', val2, 'has not been defined.'
+                                    return None
+                            else:
+                                self.variables[val1] = val2
+                                return val2
+                        else:
+                            print 'Cannot assign a value to a non-variable.'
+                            return None
+
+
+                    # Now for other operations, pass in a list of operand values
+                    operands = []
+                    for j in xrange(self.args_needed[operation]):
+                        oper = num_stack.pop()
+                        if type(oper) == str:
+                            if oper in self.variables:
+                                # The operands are being passed in reverse order
+                                operands.append(self.variables[oper])
+                            else:
+                                print 'The variable', oper, 'has not been defined.'
+                                return None
+                        else:
+                            operands.append(oper)
+                    
+                    was_success, new_val = self.perform_operation(operands, operation)
+
                     if not was_success:
-                        # Happens when operators had a bust
                         return None
                     num_stack.append(new_val)
 
