@@ -9,14 +9,5 @@ parser = MyParser()
 line = '0'
 
 while line:
-    try:
-        print parser.parse(lexer.get_token_list(line))
-        line = raw_input('>>  ')
-    except:
-        print 'Dumping all values:'
-        for ident, value in parser.variables.iteritems():
-            print ident, '=', value
-        exit(0)
-
-
-
+    print parser.parse(lexer.get_token_list(line))
+    line = raw_input('>>  ')

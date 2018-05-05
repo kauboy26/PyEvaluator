@@ -1,8 +1,11 @@
+FAILURE = 0
+SUCCESS = 1
+
 class MyParser():
     def __init__(self):
         # will store the values of variables
         self.variables = {}
-        self.precedence = {'*': 5, '/': 5, '+': 4, '-': 4, 'EOL': 0, '(': 0, ')':0, '=': 1} 
+        self.precedence = {'*': 5, '/': 5, '%':5, '+': 4, '-': 4, 'EOL': 0, '(': 0, ')':0, '=': 1} 
 
     def perform_operation(self, val1, val2, operation):
         # Depending on what val1 and val2 are (ints or strings?),
@@ -12,43 +15,56 @@ class MyParser():
         val1_is_str = type(val1) == str
         val2_is_str = type(val2) == str
 
-        if val1_is_str:
-            if val1 in self.variables:
-                value1 = self.variables[val1]
+        if operation == '=':
+            if not val1_is_str:
+                print 'Cannot assign value to a number'
+                return FAILURE, None
             else:
-                self.variables[val1] = 0
-                value1 = 0
+                if not val2_is_str:
+                    self.variables[val1] = val2
+                    return SUCCESS, val2
+                else:
+                    if val2 not in self.variables:
+                        print 'The variable', val2, 'has not been defined.'
+                        return FAILURE, None
+                    else:
+                        self.variables[val1] = self.variables[val2]
+                        return SUCCESS, self.variables[val2]
+
+        # Since the '=' operator is the only operator in which one of the variables (the left hand one)
+        # is allowed to not exist, from this point onwards, all the operations will require both to exist
+        if val1_is_str:
+            if val1 not in self.variables:
+                print 'The variable', val1, 'has not been defined'
+                return FAILURE, None
+            else:
+                value1 = self.variables[val1]
         else:
             value1 = val1
 
         if val2_is_str:
-            if val2 in self.variables:
-                value2 = self.variables[val2]
+            if val2 not in self.variables:
+                print 'The variable', val2, 'has not been defined'
+                return FAILURE, None
             else:
-                self.variables[val2] = 0
-                value2 = 0
+                value2 = self.variables[val2]
         else:
             value2 = val2
 
-        if operation == '=':
-            if not val1_is_str:
-                print 'Cannot assign value to a number'
-                return 999
-            else:
-                self.variables[val1] = value2
-                return value2
+        result = 0
 
         if operation == '*':
-            return value1 * value2
+            result = value1 * value2
         elif operation == '+':
-            return value1 + value2
+            result = value1 + value2
         elif operation == '/':
-            return value1 / value2
+            result = value1 / value2
         elif operation == '-':
-            return value1 - value2
+            result = value1 - value2
+        elif operation == '%':
+            result = value1 % value2
 
-        print 'Bad operand!'
-        return 999
+        return SUCCESS, result
 
     def parse(self, tk_list=[('EOL', None)]):
         op_stack = []
@@ -71,12 +87,15 @@ class MyParser():
                         val2 = num_stack.pop()
                         val1 = num_stack.pop()
                         operation = op_stack.pop()
-                        new_val = self.perform_operation(val1, val2, operation)
+                        was_success, new_val = self.perform_operation(val1, val2, operation)
+                        if not was_success:
+                            # Happens when operators had a bust
+                            return None
                         num_stack.append(new_val)
 
                     if not op_stack:
                         print 'Mismatched parens.'
-                        return 999
+                        return None
                     else:
                         op_stack.pop()
                         i = i + 1
@@ -90,7 +109,10 @@ class MyParser():
                     val2 = num_stack.pop()
                     val1 = num_stack.pop()
                     operation = op_stack.pop()
-                    new_val = self.perform_operation(val1, val2, operation)
+                    was_success, new_val = self.perform_operation(val1, val2, operation)
+                    if not was_success:
+                        # Happens when operators had a bust
+                        return None
                     num_stack.append(new_val)
 
                 # At this point, either the operand stack is empty, or the top most
@@ -101,17 +123,17 @@ class MyParser():
         if num_stack:
             if len(num_stack) > 1:
                 print 'Not enough operators?'
-                return 999
+                return None
             else:
                 result = num_stack.pop()
                 if type(result) == str:
                     if result in self.variables:
                         return self.variables[result]
                     else:
-                        print 'Has this variable been defined? :', result 
-                        return 999
+                        print 'The variable', result, 'has not been defined.'
+                        return None
                 else:
                     return result
         else:
             print 'Faulty expression!'
-            return 999
+            return None
