@@ -8,7 +8,7 @@ HIGHEST_PREC = 60
 class MyParser():
     def __init__(self):
         # will store the values of variables
-        self.variables = {}
+        self.variables = {'pi': math.pi, 'e': math.e}
         self.precedence =\
             {'*': 50, '/': 50, '%':50, '+': 40, '-': 40,
             'sin': HIGHEST_PREC, 'sqrt': HIGHEST_PREC, 'pow': HIGHEST_PREC,   # include special functions like these
