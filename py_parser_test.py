@@ -27,6 +27,47 @@ class MyParser():
     def perform_operation(self, operands, operation):
         # The operands MUST be passed in reverse order!
         # eg. operands = [1, 2], operation = '-' will perform 2 - 1
+        if operation not in self.user_functions:
+            return self.perform_primitive_operation(operands, operation)
+
+        # If it's a user defined function:
+        func_def = self.user_functions[operation]
+        num_stack = []
+
+        operand_stack = []
+
+        if len(func_def) == 1:
+            typ, val = func_def[0]
+            if typ == 'C':
+                return SUCCESS, val
+            elif typ == 'A':
+                return SUCCESS, operands[val]
+
+
+        operands.reverse()
+
+        for item in func_def:
+            print item
+
+        for typ, val in func_def:
+            if typ == 'C':
+                if val == '$':
+                    operand_stack.append(num_stack.pop())
+                else:
+                    operand_stack.append(val)
+            elif typ == 'A':
+                operand_stack.append(operands[val])
+            elif typ == 'O':
+                status, result = self.perform_operation(operand_stack, val)
+                if status == FAILURE:
+                    return FAILURE, None
+                operand_stack = []
+                num_stack.append(result)
+
+        return SUCCESS, num_stack.pop()
+
+    def perform_primitive_operation(self, operands, operation):
+        # The operands must be in reverse order.
 
         if operation == '*':
             result = operands[1] * operands[0]
@@ -51,6 +92,7 @@ class MyParser():
 
         return SUCCESS, result
 
+
     def parse(self, tk_list=[('EOL', None)]):
         if len(tk_list) > 0:
             if tk_list[0][1] == 'help':
@@ -71,7 +113,9 @@ class MyParser():
                     print 'The function', key, 'requires', value, 'arguments'
                 return None
             if tk_list[0][1] == 'def':
-                self.parse_definition(tk_list)
+                was_success = self.parse_definition(tk_list)
+                if was_success:
+                    print 'Function defined.'
                 return None
 
         op_stack = []
@@ -87,7 +131,7 @@ class MyParser():
         while i < len(tk_list):
             tk_type, value = tk_list[i]
             if tk_type == 'NUM':
-                num_stack.append(value) # TODO Shall I convert this to a float?
+                num_stack.append(float(value)) # TODO Shall I convert this to a float?
             else:
                 if tk_type == 'ID':
                     if value in self.functions:
@@ -358,9 +402,15 @@ class MyParser():
                 self.functions[func_name] = 0
                 self.precedence[func_name] = HIGHEST_PREC
                 self.args_needed[func_name] = num_args
+                if not def_stack:
+                    typ, val = pseudo_num_stack.pop()
+                    if typ == 'C':
+                        def_stack.append(('C', val))
+                    else:
+                        def_stack.append(('A', args[val]))
                 self.user_functions[func_name] = def_stack
         else:
             print 'Faulty expression in function definition!'
-            return FAILURE        
+            return FAILURE      
 
         return SUCCESS
