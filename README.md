@@ -3,10 +3,10 @@ Read the Evaulator readme for more info, I will update this later. For now, prop
 be doing any more than what I'm proposing, this is an exhaustive list. If anything I will fall short
 of these features) are:  
 
-* Assignment statement processing
-* Multi character variable names
-* Pre-defined functions (you can call sin(x), etc)
-* Finally (perhaps a little ambitious, I don't know how to accomplish this) defining and using your own functions.  
+* Assignment statement processing (done but untested)
+* Multi character variable names (done but untested)
+* Pre-defined functions (you can call sin(x), etc) (done but untested)
+* Finally (perhaps a little ambitious, I don't know how to accomplish this) defining and using your own functions. (coming shortly)   
 
 ## Usage
 You need Python 2.7 on your computer. Run the following:  

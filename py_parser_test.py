@@ -48,6 +48,28 @@ class MyParser():
         return SUCCESS, result
 
     def parse(self, tk_list=[('EOL', None)]):
+        if len(tk_list) > 0:
+            if tk_list[0][1] == 'help':
+                print 'Type in any expressions or assignment statements you want.'
+                print 'For example:'
+                print '>>  a = 1 + 1'
+                print '2'
+                print '>>  a = a + 3'
+                print '5'
+                print 'Type "print" to see all values and defined functions.\n'
+                return None
+            if tk_list[0][1] == 'print':
+                print 'Printing variables:'
+                for key, value in self.variables.iteritems():
+                    print key, '=', value
+                print '\nDefined functions:'
+                for key, value in self.args_needed.iteritems():
+                    print 'The function', key, 'requires', value, 'arguments'
+                return None
+            if tk_list[0][1] == 'def':
+                # self.parse_definition(tk_list)
+                return None
+
         op_stack = []
         num_stack = []
 
@@ -57,7 +79,7 @@ class MyParser():
 
         precedence = self.precedence
 
-        i =0
+        i = 0
         while i < len(tk_list):
             tk_type, value = tk_list[i]
             if tk_type == 'NUM':
