@@ -1,5 +1,5 @@
 # PyEvaluator
-I would like to call this a language, although maybe that's an exaggeration. PyEvaluator evaluates statements that are arithmetic expressions, variable assignments, or function definitions. Here are it's features:    
+I would like to call this a language, although maybe that's an exaggeration. PyEvaluator evaluates statements that are arithmetic expressions, variable assignments, or function definitions. Here are its features:    
 
 * Assignment statement processing  
 ```>>  a = 3 + 4```
