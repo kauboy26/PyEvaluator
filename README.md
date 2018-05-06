@@ -11,15 +11,15 @@ I would like to call this a language, although maybe that's an exaggeration. PyE
 ```>>  def cos(x) = pow(1 - pow(sin(x), 2), 1/2)```  
 
 ## Usage
-You need Python 2.7 on your computer. Run the following:  
+You need Python 2.7 on your computer. Run the following, within the directory containing ```lex_test_script.py```:  
 ```
 python lex_test_script.py
 ```  
-That should start it and you will see a prompt ```>>```. Type in whatever expressions you want, like "```a0 = 1 + 3 * 4```", etc and have a blast. Type in "```help```" if you don't know what to do.
+That should start it and you will see a prompt ```>>```. Type in whatever expressions you want, like "```>>  a0 = 1 + 3 * 4```", etc and have a blast. Type in "```help```" if you don't know what to do.
 
 ## Oddities
 These work:  
-* ```3 4 +```
-* ```pow(2 3,)```  
+* ```>>  3 4 +```
+* ```>>  pow(2 3,)```  
 In general, you can misplace arguments, put commas in the wrong place, etc. In this implementation, only the number of arguments is verified(counting the args and then counting the commas), not the exact position of the arguments. I will fix
 this later if time permits.
