@@ -51,7 +51,17 @@ class MyLexer():
                     num = num * 10 + int(in_str[i])
                     i = i + 1
 
-                token_list.append(('NUM', float(num)))
+                if i < length and in_str[i] == '.':
+                    i = i + 1
+
+                frac = 0
+                div = 10
+                while i < length and is_numeric(in_str[i]):
+                    frac = frac + float(in_str[i]) / div
+                    div = div * 10
+                    i = i + 1
+
+                token_list.append(('NUM', float(num + frac)))
             
             elif is_alpha(in_str[i]):
                 # Requires variables to start with a letter. After that anything is fine

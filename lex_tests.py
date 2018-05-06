@@ -31,6 +31,10 @@ assert(lexer.get_token_list('9 + 90 * (- as8df') == [('NUM', 9), ('+', None), ('
     ('-', None), ('ID', 'as8df'), ('EOL', None)])
 assert(lexer.get_token_list('2 4 56') == [('NUM', 2), ('NUM', 4), ('NUM', 56), ('EOL', None)])
 
+assert(lexer.get_token_list('212.312 4.33 00.000') == [('NUM', 212.312), ('NUM', 4.33), ('NUM', 0), ('EOL', None)])
+assert(lexer.get_token_list('2.') == [('NUM', 2), ('EOL', None)])
+assert(lexer.get_token_list('1.1.2') == [('NUM', 1.1), ('NUM', 2), ('EOL', None)])
+
 
 print '\nParser stuff\n'
 parser = py_parser_test.MyParser()
