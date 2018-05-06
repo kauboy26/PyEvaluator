@@ -1,3 +1,5 @@
+import math
+
 FAILURE = 0
 SUCCESS = 1
 
@@ -8,7 +10,7 @@ class MyParser():
         self.precedence =\
             {'*': 50, '/': 50, '%':50, '+': 40, '-': 40,
             'sin': 60, 'sqrt': 60, 'pow': 60,   # include special functions like these
-            '(': 0, ')':1, '=': 10,
+            '(': 0, ')':1, ',': 5, '=': 10,
             'EOL':0}
 
         # denotes the number of arguments needed when that function is performed.
@@ -38,12 +40,21 @@ class MyParser():
                 print 'Cannot modulo by 0.'
                 return FAILURE, None
             result = operands[1] % operands[0]
+        elif operation == 'pow':
+            result = operands[1] ** operands[0]
+        elif operation == 'sin':
+            result = math.sin(operands[0])
 
         return SUCCESS, result
 
     def parse(self, tk_list=[('EOL', None)]):
         op_stack = []
         num_stack = []
+
+        # Use this to figure out whether not enough operands have been
+        # pushed for the function to work.
+        args_count_stack = [] 
+
         precedence = self.precedence
 
         i =0
@@ -51,25 +62,39 @@ class MyParser():
             tk_type, value = tk_list[i]
             if tk_type == 'NUM':
                 num_stack.append(value) # TODO Shall I convert this to a float?
-            elif tk_type == 'ID':
-                # The token may be a function, so make sure it isn't
-                num_stack.append(value)
             else:
+                if tk_type == 'ID':
+                    if value in self.functions:
+                        tk_type = value
+                    else:
+                        # found a variable, go to next iteration.
+                        num_stack.append(value)
+                        i = i + 1
+                        continue
+
                 if tk_type == '(':
                     op_stack.append(tk_type)
                     i = i + 1
                     continue
 
                 while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]:
-                    # When Ilooking at the current operand token,
+                    # When I am looking at the current operand token,
                     # if it has a lower precedence then the topmost thing
                     # on the operand stack, keep popping off the num and op stacks
                     # and evaluate and push
                     operation = op_stack.pop()
                     if len(num_stack) < self.args_needed[operation]:
-                        print 'Not enough arguments!'
+                        print 'Not enough arguments to the function:', operation, '\nNeeded',\
+                            self.args_needed[operation], 'but found', len(num_stack)
                         return None
 
+                    if operation in self.functions:
+                        if args_count_stack[-1] == self.args_needed[operation]:
+                            args_count_stack.pop()
+                        else:
+                            print 'Incorrect number of arguments to the function:', operation, '\nNeeded',\
+                                self.args_needed[operation], 'but found', args_count_stack[-1]
+                            return None
 
                     # See note 1 from notes.md, for why '=' is being tested
                     # here an not in perform_operation
@@ -90,7 +115,6 @@ class MyParser():
                         else:
                             print 'Cannot assign a value to a non-variable.'
                             return None
-
 
                     # Now for other operations, pass in a list of operand values
                     operands = []
@@ -120,8 +144,19 @@ class MyParser():
                         print 'Mismatched parens.'
                         return None
                     op_stack.pop()
+
+                elif tk_type == ',':
+                    if not args_count_stack:
+                        print '"," must appear to separate function arguments.'
+                        return None
+                    else:
+                        args_count_stack[-1] = args_count_stack[-1] + 1
+                    # We don't push ',' on to the stack.
                 else:
+                    if tk_type in self.functions:
+                        args_count_stack.append(1)
                     op_stack.append(tk_type)
+
             i = i + 1
 
         if num_stack:

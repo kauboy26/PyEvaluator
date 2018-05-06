@@ -14,7 +14,7 @@ def is_special(c):
     return c == '*' or c == '/' or\
         c == '+' or c == '-' or\
         c == '(' or c == ')' or\
-        c == '='
+        c == '=' or c == ','
 
 
 # have a lexer class that rips tokens out and gives me one at a time
