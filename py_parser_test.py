@@ -156,7 +156,8 @@ class MyParser():
                         return None
 
                     if operation in self.functions:
-                        if args_count_stack[-1] == self.args_needed[operation]:
+                        if args_count_stack[-1] == self.args_needed[operation]\
+                            or (args_count_stack[-1] == 1 and self.args_needed[operation] == 0):
                             args_count_stack.pop()
                         else:
                             print 'Incorrect number of arguments to the function:', operation, '\nNeeded',\
@@ -296,7 +297,7 @@ class MyParser():
             print 'Mismatched parens in function definition.'
             return FAILURE
 
-        if arg_index != num_args - 1:
+        if arg_index != num_args - 1 and not (arg_index == 0 and num_args == 0):
             print 'Incorrect number of commas separating formal params.'
             return FAILURE
 
@@ -342,7 +343,8 @@ class MyParser():
                         return FAILURE
 
                     if operation in self.functions:
-                        if args_count_stack[-1] == self.args_needed[operation]:
+                        if args_count_stack[-1] == self.args_needed[operation]\
+                            or (args_count_stack[-1] == 1 and self.args_needed[operation] == 0):
                             args_count_stack.pop()
                         else:
                             print 'Incorrect number of arguments to the function:', operation, '\nNeeded',\
