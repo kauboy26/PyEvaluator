@@ -51,7 +51,7 @@ class MyLexer():
                     num = num * 10 + int(in_str[i])
                     i = i + 1
 
-                token_list.append(('NUM', num))
+                token_list.append(('NUM', float(num)))
             
             elif is_alpha(in_str[i]):
                 # Requires variables to start with a letter. After that anything is fine

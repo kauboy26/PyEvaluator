@@ -46,9 +46,6 @@ class MyParser():
 
         operands.reverse()
 
-        for item in func_def:
-            print item
-
         for typ, val in func_def:
             if typ == 'C':
                 if val == '$':
@@ -131,7 +128,7 @@ class MyParser():
         while i < len(tk_list):
             tk_type, value = tk_list[i]
             if tk_type == 'NUM':
-                num_stack.append(float(value)) # TODO Shall I convert this to a float?
+                num_stack.append(value)
             else:
                 if tk_type == 'ID':
                     if value in self.functions:
