@@ -18,9 +18,9 @@ class MyParser():
         # denotes the number of arguments needed when that function is performed.
         self.args_needed =\
             {'*': 2, '/': 2, '%':2, '+': 2, '-': 2, '=': 2,
-            'sin':1, 'sqrt': 1, 'pow':2}
+            'sin':1, 'pow':2}
 
-        self.functions = {'sin':0, 'sqrt':0, 'pow':0}
+        self.functions = {'sin':1, 'pow':2}
 
         self.user_functions = {}
 
@@ -97,16 +97,24 @@ class MyParser():
                 print 'For example:'
                 print '>>  a = 1 + 1'
                 print '2'
-                print '>>  a = a + 3'
-                print '5'
-                print 'Type "print" to see all values and defined functions.\n'
+                print '>>  a = a + pow(2, 2)'
+                print '6'
+                print '\nYou can also define your own functions, in the form'
+                print 'def <function name>([zero or more comma separated args]) = <expression>'
+                print '\nFor example,'
+                print '>>  def f(x, y) = x * y + 3'
+                print '>>  f(2, 3)'
+                print '9\n'
+                print 'Type "print" to see all values and defined functions.'
+                print 'Type "help" to see this message.'
+
                 return None
             if tk_list[0][1] == 'print':
                 print 'Printing variables:'
                 for key, value in self.variables.iteritems():
                     print key, '=', value
                 print '\nDefined functions:'
-                for key, value in self.args_needed.iteritems():
+                for key, value in self.functions.iteritems():
                     print 'The function', key, 'requires', value, 'arguments'
                 return None
             if tk_list[0][1] == 'def':
@@ -398,7 +406,7 @@ class MyParser():
                 print 'Not enough operators?'
                 return FAILURE
             else:
-                self.functions[func_name] = 0
+                self.functions[func_name] = num_args
                 self.precedence[func_name] = HIGHEST_PREC
                 self.args_needed[func_name] = num_args
                 if not def_stack:
