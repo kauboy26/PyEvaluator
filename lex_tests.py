@@ -56,6 +56,19 @@ assert(parser.parse(lexer.get_token_list('b = 18 + pow(5)')) == None)
 assert(parser.parse(lexer.get_token_list('b = 1 - 4 - 5 - 1')) == -9)
 assert(parser.parse(lexer.get_token_list('89 = b')) == None)
 
+print '\nThese tests should handle things like a = -2'
+assert(parser.parse(lexer.get_token_list('-2')) == -2)
+assert(parser.parse(lexer.get_token_list('google = -0')) == 0)
+assert(parser.parse(lexer.get_token_list('8 - 2')) == 6)
+assert(parser.parse(lexer.get_token_list('-9 - 9')) == -18)
+assert(parser.parse(lexer.get_token_list('-8 * 8')) == 64)
+assert(parser.parse(lexer.get_token_list('9 - 9 * -9')) == 90)
+assert(parser.parse(lexer.get_token_list('a = 10')) == 10)
+assert(parser.parse(lexer.get_token_list('a = -a')) == -10)
+assert(parser.parse(lexer.get_token_list('9 * -(4 - -6)')) == -90)
+assert(parser.parse(lexer.get_token_list('-1 * -5 * -3')) == -15)
+assert(parser.parse(lexer.get_token_list('a * - a - a')) == -90)
+
 print '\nfunction defintion stuff\n'
 assert(parser.parse(lexer.get_token_list('def f(a, b, c) = a * b + c')) == None)
 assert(parser.parse(lexer.get_token_list('f(2, 3, 4)')) == 10)

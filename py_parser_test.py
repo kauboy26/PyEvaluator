@@ -1,5 +1,7 @@
 import math
 
+import miscell
+
 FAILURE = 0
 SUCCESS = 1
 
@@ -93,21 +95,7 @@ class MyParser():
     def parse(self, tk_list=[('EOL', None)]):
         if len(tk_list) > 0:
             if tk_list[0][1] == 'help':
-                print 'Type in any expressions or assignment statements you want.'
-                print 'For example:'
-                print '>>  a = 1 + 1'
-                print '2'
-                print '>>  a = a + pow(2, 2)'
-                print '6'
-                print '\nYou can also define your own functions, in the form'
-                print 'def <function name>([zero or more comma separated args]) = <expression>'
-                print '\nFor example,'
-                print '>>  def f(x, y) = x * y + 3'
-                print '>>  f(2, 3)'
-                print '9\n'
-                print 'Type "print" to see all values and defined functions.'
-                print 'Type "help" to see this message.'
-
+                miscell.print_help()
                 return None
             if tk_list[0][1] == 'print':
                 print 'Printing variables:'
