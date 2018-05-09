@@ -23,3 +23,8 @@ These work:
 * ```>>  pow(2 3,)```  
 In general, you can misplace arguments, put commas in the wrong place, etc. In this implementation, only the number of arguments is verified(counting the args and then counting the commas), not the exact position of the arguments. I will fix
 this later if time permits.
+
+## Running Tests
+Run this command:  
+```python lex_tests.py```   
+All tests should pass. Ignore the other messages that are printed to console, they are messages from the parser.
