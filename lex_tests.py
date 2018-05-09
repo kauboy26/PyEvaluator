@@ -49,7 +49,7 @@ assert(parser.parse(lexer.get_token_list('a = a + 7')) == 16.0)
 assert(parser.parse(lexer.get_token_list('5 + a * 2')) == 37)
 assert(parser.parse(lexer.get_token_list('pow(a + 4, 2)')) == 400)
 assert(parser.parse(lexer.get_token_list('pow(pow(pow(pow(a - 18, 2), 2), 2), 2)')) == 256 ** 2)
-assert(parser.parse(lexer.get_token_list('9 ++ 9')) == None)
+assert(parser.parse(lexer.get_token_list('9 ++ 9')) == 18)
 assert(parser.parse(lexer.get_token_list('34 - c')) == None)
 assert(parser.parse(lexer.get_token_list('c = ')) == None)
 assert(parser.parse(lexer.get_token_list('b = 18 + pow(5)')) == None)
@@ -61,13 +61,26 @@ assert(parser.parse(lexer.get_token_list('-2')) == -2)
 assert(parser.parse(lexer.get_token_list('google = -0')) == 0)
 assert(parser.parse(lexer.get_token_list('8 - 2')) == 6)
 assert(parser.parse(lexer.get_token_list('-9 - 9')) == -18)
-assert(parser.parse(lexer.get_token_list('-8 * 8')) == 64)
+assert(parser.parse(lexer.get_token_list('-8 * 8')) == -64)
 assert(parser.parse(lexer.get_token_list('9 - 9 * -9')) == 90)
 assert(parser.parse(lexer.get_token_list('a = 10')) == 10)
 assert(parser.parse(lexer.get_token_list('a = -a')) == -10)
 assert(parser.parse(lexer.get_token_list('9 * -(4 - -6)')) == -90)
 assert(parser.parse(lexer.get_token_list('-1 * -5 * -3')) == -15)
 assert(parser.parse(lexer.get_token_list('a * - a - a')) == -90)
+assert(parser.parse(lexer.get_token_list('- pow(2, 1)')) == -2)
+assert(parser.parse(lexer.get_token_list('pow(-2, 1)')) == -2)
+assert(parser.parse(lexer.get_token_list('- pow(-2, -1)')) == 0.5)
+assert(parser.parse(lexer.get_token_list('pow(-2, -1)')) == -0.5)
+assert(parser.parse(lexer.get_token_list('--pow(9 - - - 1, 1)')) == 8)
+assert(parser.parse(lexer.get_token_list('2 + 3 -- 3')) == 8)
+assert(parser.parse(lexer.get_token_list('pow(----1, ----1) ----- pow(----1, ----1)')) == 0)
+
+print '\nMix up the \'+\'\'s and \'-\'\'s. A lot of backslashes and apostrophes here my friend.'
+assert(parser.parse(lexer.get_token_list('8 ++ 8')) == 16)
+assert(parser.parse(lexer.get_token_list('9 + - +++ 9')) == 0)
+assert(parser.parse(lexer.get_token_list('5 -(-(-(-(1))))')) == 6)
+assert(parser.parse(lexer.get_token_list('2 + 2 -- 1')) == 5)
 
 print '\nfunction defintion stuff\n'
 assert(parser.parse(lexer.get_token_list('def f(a, b, c) = a * b + c')) == None)
@@ -107,6 +120,23 @@ assert(parser.parse(lexer.get_token_list('this(1 3,)')) == -2)  # Hahaha this th
 print '\nMore nested function calls\n'
 assert(parser.parse(lexer.get_token_list('def gg(a, b, c) = goodboy() * badd() /4 * a')) == None)
 assert(parser.parse(lexer.get_token_list('gg(pow(3, 2), 8, pow(pow(1, 2), 5))')) == 9)
+
+print '\nFunc defs with the a = -2 problem'
+assert(parser.parse(lexer.get_token_list('def fool() = -2')) == None)
+assert(parser.parse(lexer.get_token_list('fool()')) == -2)
+assert(parser.parse(lexer.get_token_list('def whato(a, b, c) = -a * -b * -c')) == None)
+assert(parser.parse(lexer.get_token_list('whato(3, 4, 5)')) == -60)
+assert(parser.parse(lexer.get_token_list('def youare(a) = ---fool()')) == None)
+assert(parser.parse(lexer.get_token_list('youare(3)')) == 2)
+assert(parser.parse(lexer.get_token_list('def iamapsychoFORSURE(a, b, c) = -whato(-c, -c, c---c)')) == None)
+
+assert(parser.parse(lexer.get_token_list('---fool()')) == 2)
+assert(parser.parse(lexer.get_token_list('iamapsychoFORSURE(2---3, ---3, 3)')) == 0)
+assert(parser.parse(lexer.get_token_list('def thetruth(god, is, great) = whato(god, -god + -god, god)')) == None)
+assert(parser.parse(lexer.get_token_list('thetruth(1, 1, 1)')) == 2)
+
+print '\nEasy one: 2 + 2 = ?'
+assert(parser.parse(lexer.get_token_list('2 + 2')) == 4)
 
 print '\n......................'
 print 'All tests passed!'

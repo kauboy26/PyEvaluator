@@ -93,26 +93,16 @@ class MyParser():
 
 
     def parse(self, tk_list=[('EOL', None)]):
-        if len(tk_list) > 0:
-            if tk_list[0][1] == 'help':
-                miscell.print_help()
-                return None
-            if tk_list[0][1] == 'print':
-                print 'Printing variables:'
-                for key, value in self.variables.iteritems():
-                    print key, '=', value
-                print '\nDefined functions:'
-                for key, value in self.functions.iteritems():
-                    print 'The function', key, 'requires', value, 'arguments'
-                return None
-            if tk_list[0][1] == 'def':
-                was_success = self.parse_definition(tk_list)
-                if was_success:
-                    print 'Function defined.'
-                return None
+        
+        if not self.should_parse(tk_list):
+            return None
 
         op_stack = []
         num_stack = []
+
+        # op_s_len and the num_stack length get reset on encountering '(' or ','. See note 3
+        op_stack_length = 0
+        num_stack_length = 0
 
         # Use this to figure out whether not enough operands have been
         # pushed for the function to work.
@@ -123,8 +113,10 @@ class MyParser():
         i = 0
         while i < len(tk_list):
             tk_type, value = tk_list[i]
+
             if tk_type == 'NUM':
                 num_stack.append(value)
+                num_stack_length = num_stack_length + 1
             else:
                 if tk_type == 'ID':
                     if value in self.functions:
@@ -132,13 +124,22 @@ class MyParser():
                     else:
                         # found a variable, go to next iteration.
                         num_stack.append(value)
+                        num_stack_length = num_stack_length + 1
                         i = i + 1
                         continue
 
                 if tk_type == '(':
                     op_stack.append(tk_type)
+                    op_stack_length = 0
+                    num_stack_length = 0
                     i = i + 1
                     continue
+
+                if (tk_type == '-' or tk_type == '+') and (op_stack_length >= num_stack_length):
+                    # This solves the a  = -2 problem. See note 3
+                    num_stack.append(-1 if tk_type == "-" else 1)
+                    num_stack_length = num_stack_length + 1
+                    tk_type = '*'
 
                 while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]:
                     # When I am looking at the current operand token,
@@ -146,8 +147,10 @@ class MyParser():
                     # on the operand stack, keep popping off the num and op stacks
                     # and evaluate and push
                     operation = op_stack.pop()
+                    op_stack_length = op_stack_length - 1
+
                     if len(num_stack) < self.args_needed[operation]:
-                        print 'Not enough arguments to the function:', operation, '\nNeeded',\
+                        print 'Not enough arguments to the function / operation:', operation, '\nNeeded',\
                             self.args_needed[operation], 'but found', len(num_stack)
                         return None
 
@@ -160,45 +163,27 @@ class MyParser():
                                 self.args_needed[operation], 'but found', args_count_stack[-1]
                             return None
 
-                    # See note 1 from notes.md, for why '=' is being tested
-                    # here an not in perform_operation
+
                     if operation == '=':
-                        val2 = num_stack.pop()
-                        val1 = num_stack.pop()
-                        if type(val1) == str:
-                            if type(val2) == str:
-                                if val2 in self.variables:
-                                    self.variables[val1] = self.variables[val2]
-                                    return self.variables[val2]
-                                else:
-                                    print 'The variable', val2, 'has not been defined.'
-                                    return None
-                            else:
-                                self.variables[val1] = val2
-                                return val2
-                        else:
-                            print 'Cannot assign a value to a non-variable.'
-                            return None
+                        # See note 1 from notes.md, for why '=' is being tested
+                        # here annd not in perform_operation
+                        return self.assign_and_terminate(num_stack)
+
 
                     # Now for other operations, pass in a list of operand values
                     operands = []
-                    for j in xrange(self.args_needed[operation]):
-                        oper = num_stack.pop()
-                        if type(oper) == str:
-                            if oper in self.variables:
-                                # The operands are being passed in reverse order
-                                operands.append(self.variables[oper])
-                            else:
-                                print 'The variable', oper, 'has not been defined.'
-                                return None
-                        else:
-                            operands.append(oper)
+                    was_success = self.fetch_operands(num_stack, self.args_needed[operation], operands)
+                    if not was_success:
+                        return None
                     
+                    num_stack_length = num_stack_length - self.args_needed[operation]
                     was_success, new_val = self.perform_operation(operands, operation)
 
                     if not was_success:
                         return None
+
                     num_stack.append(new_val)
+                    num_stack_length = num_stack_length + 1
 
                 # At this point, either the operand stack is empty, or the top most
                 # operand has a precedence lower than the newest operand.
@@ -213,33 +198,21 @@ class MyParser():
                     if not args_count_stack:
                         print '"," must appear to separate function arguments.'
                         return None
-                    else:
-                        args_count_stack[-1] = args_count_stack[-1] + 1
+
+                    args_count_stack[-1] = args_count_stack[-1] + 1
+                    op_stack_length = 0  # INITIALLY FORGOT THIS, SOURCE OF BUG. Note 3
+                    num_stack_length = 0
                     # We don't push ',' on to the stack.
                 else:
                     if tk_type in self.functions:
                         args_count_stack.append(1)
                     op_stack.append(tk_type)
+                    op_stack_length = op_stack_length + 1
 
             i = i + 1
 
-        if num_stack:
-            if len(num_stack) > 1:
-                print 'Not enough operators?'
-                return None
-            else:
-                result = num_stack.pop()
-                if type(result) == str:
-                    if result in self.variables:
-                        return self.variables[result]
-                    else:
-                        print 'The variable', result, 'has not been defined.'
-                        return None
-                else:
-                    return result
-        else:
-            print 'Faulty expression!'
-            return None
+        return self.check_num_stack_errors_and_return(num_stack)
+
 
     def parse_definition(self, tk_list=[('EOL', None)]):
         """
@@ -306,8 +279,13 @@ class MyParser():
         i = i + 1
 
         # Now finally, for the task of parsing the definition of the function
+
         pseudo_num_stack = []
         op_stack = []
+        op_stack_length = 0
+        num_stack_length = 0
+
+
         def_stack = [] # will hold the polish notation
         args_count_stack = [] # NOT to confuse with formal arguments, this structure is
                                 # used to keep track of functions appearing within
@@ -317,22 +295,34 @@ class MyParser():
             tk_type, value = tk_list[i]
             if tk_type == 'NUM':
                 pseudo_num_stack.append(('C', value)) # a constant
+                num_stack_length = num_stack_length + 1
             else:
                 if tk_type == 'ID':
                     if value in self.functions:
                         tk_type = value
                     else:
                         pseudo_num_stack.append(('A', value)) # argument
+                        num_stack_length = num_stack_length + 1
                         i = i + 1
                         continue
 
                 if tk_type == '(':
                     op_stack.append(tk_type)
+                    num_stack_length = 0
+                    op_stack_length = 0
                     i = i + 1
                     continue
 
+                if (tk_type == '-' or tk_type == '+') and (op_stack_length >= num_stack_length):
+
+                    pseudo_num_stack.append(('C', -1) if tk_type == '-' else ('C', 1))
+                    num_stack_length = num_stack_length + 1
+                    tk_type = '*'
+
                 while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]:
                     operation = op_stack.pop()
+                    op_stack_length = op_stack_length - 1
+
                     if len(pseudo_num_stack) < self.args_needed[operation]:
                         print 'Not enough arguments to the function:', operation, '\nNeeded',\
                             self.args_needed[operation], 'but found', len(pseudo_num_stack)
@@ -363,8 +353,11 @@ class MyParser():
                                 print 'Variable not in formal params!'
                                 return FAILURE
 
+                    num_stack_length = num_stack_length - self.args_needed[operation]
+
                     def_stack.append(('O', operation))
                     pseudo_num_stack.append(('C', '$'))
+                    num_stack_length = num_stack_length + 1
                 # END WHILE
 
                 # At this point, either the operand stack is empty, or the top most
@@ -380,32 +373,123 @@ class MyParser():
                     if not args_count_stack:
                         print '"," must appear to separate function arguments.'
                         return None
-                    else:
-                        args_count_stack[-1] = args_count_stack[-1] + 1
-                    # We don't push ',' on to the stack.
+                    
+                    args_count_stack[-1] = args_count_stack[-1] + 1
+                    num_stack_length = 0
+                    op_stack_length = 0
                 else:
                     if tk_type in self.functions:
                         args_count_stack.append(1)
                     op_stack.append(tk_type)
+                    op_stack_length = op_stack_length + 1
             i = i + 1
 
         if pseudo_num_stack:
             if len(pseudo_num_stack) > 1:
                 print 'Not enough operators?'
                 return FAILURE
+            
+            self.functions[func_name] = num_args
+            self.precedence[func_name] = HIGHEST_PREC
+            self.args_needed[func_name] = num_args
+            if not def_stack:
+                typ, val = pseudo_num_stack.pop()
+                if typ == 'C':
+                    def_stack.append(('C', val))
+                else:
+                    def_stack.append(('A', args[val]))
+            self.user_functions[func_name] = def_stack
+
+            return SUCCESS
+        
+        print 'Faulty expression in function definition!'
+        return FAILURE
+
+
+    def fetch_operands(self, num_stack, num_operands, operands):
+        """
+        num_stack is the num_stack in use in the parse method
+        num_operands is the number of operands to fetch
+        operands is the list that the operands will be added to, in REVERSE order
+        """
+        for j in xrange(num_operands):
+            oper = num_stack.pop()
+            if type(oper) == str:
+                if oper in self.variables:
+                    # The operands are being passed in reverse order
+                    operands.append(self.variables[oper])
+                else:
+                    print 'The variable', oper, 'has not been defined.'
+                    return FAILURE
             else:
-                self.functions[func_name] = num_args
-                self.precedence[func_name] = HIGHEST_PREC
-                self.args_needed[func_name] = num_args
-                if not def_stack:
-                    typ, val = pseudo_num_stack.pop()
-                    if typ == 'C':
-                        def_stack.append(('C', val))
-                    else:
-                        def_stack.append(('A', args[val]))
-                self.user_functions[func_name] = def_stack
-        else:
-            print 'Faulty expression in function definition!'
-            return FAILURE      
+                operands.append(oper)
 
         return SUCCESS
+
+
+    def check_num_stack_errors_and_return(self, num_stack):
+        """
+        Method checks to see if the num_stack has been messed up:
+        1) too many things still on the num stack (only one should be there)
+        2) an undefined variable is on the num_stack
+        """
+        if num_stack:
+            if len(num_stack) > 1:
+                print 'Not enough operators?'
+                return None
+            else:
+                result = num_stack.pop()
+                if type(result) == str:
+                    if result in self.variables:
+                        return self.variables[result]
+                    else:
+                        print 'The variable', result, 'has not been defined.'
+                        return None
+                else:
+                    return result
+        else:
+            print 'Faulty expression!'
+            return None
+
+    def should_parse(self, tk_list):
+        """
+        Reads the first token and decides whether the expression should be parsed. It
+        shoud NOT be parsed when a print, help or def command is issued.
+        """
+        if len(tk_list) > 0:
+            if tk_list[0][1] == 'help':
+                miscell.print_help()
+                return False
+            if tk_list[0][1] == 'print':
+                print 'Printing variables:'
+                for key, value in self.variables.iteritems():
+                    print key, '=', value
+                print '\nDefined functions:'
+                for key, value in self.functions.iteritems():
+                    print 'The function', key, 'requires', value, 'arguments'
+                return False
+            if tk_list[0][1] == 'def':
+                was_success = self.parse_definition(tk_list)
+                if was_success:
+                    print 'Function defined.'
+                return False
+
+        return True
+
+    def assign_and_terminate(self, num_stack):
+        val2 = num_stack.pop()
+        val1 = num_stack.pop()
+        if type(val1) == str:
+            if type(val2) == str:
+                if val2 in self.variables:
+                    self.variables[val1] = self.variables[val2]
+                    return self.variables[val2]
+                else:
+                    print 'The variable', val2, 'has not been defined.'
+                    return None
+            else:
+                self.variables[val1] = val2
+                return val2
+        else:
+            print 'Cannot assign a value to a non-variable.'
+            return None
