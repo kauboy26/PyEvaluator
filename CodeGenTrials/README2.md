@@ -3,7 +3,7 @@ Just generates assembly (LC3) for an infix expression that consists of only pare
 Although the main parts of PyEval can do a lot more, here I was just trying some experiments out.
 
 ## Usage
-Ensure that your expression is valid:  
+Ensure that your expression is valid, and run this in the directory containing ```lp.py```:  
 ```
 python lp.py <your expression within double quotes>  >  <file name.asm>
 ```  
