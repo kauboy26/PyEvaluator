@@ -65,6 +65,7 @@ class MyParser():
 
         return SUCCESS, num_stack.pop()
 
+
     def perform_primitive_operation(self, operands, operation):
         # The operands must be in reverse order.
 
@@ -135,7 +136,7 @@ class MyParser():
                     i = i + 1
                     continue
 
-                if (tk_type == '-' or tk_type == '+') and (op_stack_length >= num_stack_length):
+                if (tk_type == '-' or tk_type == '+') and (op_stack_length == num_stack_length):
                     # This solves the a  = -2 problem. See note 3
                     num_stack.append(-1 if tk_type == "-" else 1)
                     num_stack_length = num_stack_length + 1
@@ -451,6 +452,7 @@ class MyParser():
             print 'Faulty expression!'
             return None
 
+
     def should_parse(self, tk_list):
         """
         Reads the first token and decides whether the expression should be parsed. It
@@ -475,6 +477,7 @@ class MyParser():
                 return False
 
         return True
+
 
     def assign_and_terminate(self, num_stack):
         val2 = num_stack.pop()
