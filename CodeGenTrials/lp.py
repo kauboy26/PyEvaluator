@@ -35,7 +35,9 @@ def get_token_list(in_str='0'):
     return tk_list
 
 def set(reg, number):
-    # For now assume it's less than 15
+    # For now assume it's less than 15.
+    # I realize this is an efficient way of doing this, when I can double
+    # the number by adding it to itself. However, I'm just letting this be for now
     print 'AND', reg, ',', reg, ',', 0, '; set', reg, 'to', number
     if number == 0:
         return
