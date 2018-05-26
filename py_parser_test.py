@@ -138,11 +138,16 @@ class MyParser():
 
                 if (tk_type == '-' or tk_type == '+') and (op_stack_length == num_stack_length):
                     # This solves the a  = -2 problem. See note 3
-                    num_stack.append(-1 if tk_type == "-" else 1)
-                    num_stack_length = num_stack_length + 1
-                    tk_type = '*'
+                    if tk_type == '-': 
+                        num_stack.append(-1)
+                        num_stack_length = num_stack_length + 1
+                        tk_type = '*'
+                    else:
+                        i = i + 1
+                        continue
 
-                while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]:
+                while op_stack and op_stack[-1] in self.args_needed\
+                    and precedence[tk_type] <= precedence[op_stack[-1]]:  # See note 4 for op_stack[-1] in precedence
                     # When I am looking at the current operand token,
                     # if it has a lower precedence then the topmost thing
                     # on the operand stack, keep popping off the num and op stacks
@@ -168,7 +173,13 @@ class MyParser():
                     if operation == '=':
                         # See note 1 from notes.md, for why '=' is being tested
                         # here annd not in perform_operation
-                        return self.assign_and_terminate(num_stack)
+                        was_success, res = self.assign_and_terminate(num_stack)
+                        if was_success:
+                            num_stack.append(res)
+                            i = i + 1
+                            continue
+                        else:
+                            return None
 
 
                     # Now for other operations, pass in a list of operand values
@@ -486,13 +497,13 @@ class MyParser():
             if type(val2) == str:
                 if val2 in self.variables:
                     self.variables[val1] = self.variables[val2]
-                    return self.variables[val2]
+                    return SUCCESS, self.variables[val2]
                 else:
                     print 'The variable', val2, 'has not been defined.'
-                    return None
+                    return FAILURE, None
             else:
                 self.variables[val1] = val2
-                return val2
+                return SUCCESS, val2
         else:
             print 'Cannot assign a value to a non-variable.'
-            return None
+            return FAILURE, None

@@ -56,6 +56,13 @@ assert(parser.parse(lexer.get_token_list('b = 18 + pow(5)')) == None)
 assert(parser.parse(lexer.get_token_list('b = 1 - 4 - 5 - 1')) == -9)
 assert(parser.parse(lexer.get_token_list('89 = b')) == None)
 
+print '\nMismatched parens.'
+assert(parser.parse(lexer.get_token_list('(9))')) == None)
+assert(parser.parse(lexer.get_token_list('igloo = 9 + (9 * (9)) - 8)')) == None)
+assert(parser.parse(lexer.get_token_list('(igloo (-) 10)')) == None)
+assert(parser.parse(lexer.get_token_list('a = (1')) == None)
+assert(parser.parse(lexer.get_token_list('igloo + (10 + (0 - 1)')) == None)
+
 print '\nThese tests should handle things like a = -2'
 assert(parser.parse(lexer.get_token_list('-2')) == -2)
 assert(parser.parse(lexer.get_token_list('google = -0')) == 0)
