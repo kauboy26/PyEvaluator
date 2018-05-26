@@ -331,7 +331,8 @@ class MyParser():
                     num_stack_length = num_stack_length + 1
                     tk_type = '*'
 
-                while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]:
+                while op_stack and op_stack[-1] in self.args_needed\
+                    and precedence[tk_type] <= precedence[op_stack[-1]]:
                     operation = op_stack.pop()
                     op_stack_length = op_stack_length - 1
 

@@ -104,6 +104,9 @@ print '\nbroken func definitions\n'
 assert(parser.parse(lexer.get_token_list('bad = 20')) == 20)
 assert(parser.parse(lexer.get_token_list('def bad(e) = e')) == None)
 assert(parser.parse(lexer.get_token_list('bad(10)')) == None)
+assert(parser.parse(lexer.get_token_list('def oyo(a, b, c) = (1')) == None)
+assert(parser.parse(lexer.get_token_list('def oyo(a, b, c) = 9 * (1 - (2)')) == None)
+assert(parser.parse(lexer.get_token_list('def gig(bb, cc) = (9 + (9 + (9))))')) == None)
 
 print '\nbreak params\n'
 assert(parser.parse(lexer.get_token_list('def bruck(a, e, 3) = a + e + 3')) == None)
