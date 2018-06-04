@@ -22,6 +22,9 @@ class MyParser():
             {'*': 2, '/': 2, '%':2, '+': 2, '-': 2, '=': 2,
             'sin':1, 'pow':2, 'EOL': 0}
 
+        self.effect_of = {'*': -1, '/': -1, '%': -1, '+': -1, '-': -1, '=': -1,
+            'sin': 0, 'pow': -1, 'EOL': 0}
+
         self.functions = {'sin':1, 'pow':2}
 
         self.user_functions = {}
@@ -101,12 +104,10 @@ class MyParser():
         op_stack = []
         num_stack = []
 
-        # op_s_len and the num_stack length get reset on encountering '(' or ','. See note 3
-        stack_lengths = [[0, 0]]
-        OP_ST = 0
-        NUM_ST = 1
-        op_stack_length = 0
-        num_stack_length = 0
+        # This keeps track of the effect mentioned in Note 5. It is a stack
+        # that performs the duty of keeping track of num_stack length and
+        # op_stack lengths, as a sum.
+        effect = [0]
 
         # Use this to figure out whether not enough operands have been
         # pushed for the function to work.
@@ -120,7 +121,7 @@ class MyParser():
 
             if tk_type == 'NUM':
                 num_stack.append(value)
-                stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
+                effect[-1] += 1
             else:
                 if tk_type == 'ID':
                     if value in self.functions:
@@ -128,30 +129,37 @@ class MyParser():
                     else:
                         # found a variable, go to next iteration.
                         num_stack.append(value)
-                        stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
+                        effect[-1] += 1
                         i = i + 1
                         continue
 
                 if tk_type == '(':
                     op_stack.append(tk_type)
-                    stack_lengths.append([0, 0])
+                    effect.append(0)
                     i = i + 1
                     continue
 
+                if (tk_type == '-' or tk_type == '+') and effect[-1] == 0:
+                    # This solves the a  = -2 problem. See notes 3 and 5
+                    if tk_type == '-': 
+                        num_stack.append(-1)
+                        effect[-1] += 1
+                        tk_type = '*'
+                    else:
+                        i = i + 1
+                        continue
+
                 while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]\
-                    and op_stack[-1] in self.args_needed\
-                    and stack_lengths[-1][NUM_ST] >= self.args_needed[op_stack[-1]]: # TODO bug in f(1, 2)
+                    and op_stack[-1] in self.args_needed and effect[-1] > 0:
                     # See note 4 for op_stack[-1] in self.args_needed
                     # When I am looking at the current operand token,
                     # if it has a lower precedence then the topmost thing
                     # on the operand stack, keep popping off the num and op stacks
                     # and evaluate and push
                     operation = op_stack.pop()
-                    stack_lengths[-1][OP_ST] = stack_lengths[-1][OP_ST] - 1
 
                     if operation in self.functions:
-                        if args_count_stack[-1] == self.args_needed[operation]\
-                            or (args_count_stack[-1] == 1 and self.args_needed[operation] == 0):
+                        if args_count_stack[-1] == self.args_needed[operation]:
                             args_count_stack.pop()
                         else:
                             print 'Incorrect number of arguments to the function:', operation, '\nNeeded',\
@@ -176,28 +184,14 @@ class MyParser():
                     was_success = self.fetch_operands(num_stack, self.args_needed[operation], operands)
                     if not was_success:
                         return None
-                    
-                    stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] - self.args_needed[operation]
+
                     was_success, new_val = self.perform_operation(operands, operation)
 
                     if not was_success:
                         return None
 
                     num_stack.append(new_val)
-                    stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
 
-
-                if (tk_type == '-' or tk_type == '+')\
-                    and (stack_lengths[-1][OP_ST] >= stack_lengths[-1][NUM_ST]):
-                    # This solves the a  = -2 problem. See note 3
-                    print 'called - + converter'
-                    if tk_type == '-': 
-                        num_stack.append(-1)
-                        stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
-                        tk_type = '*'
-                    else:
-                        i = i + 1
-                        continue
 
                 # At this point, either the operand stack is empty, or the top most
                 # operand has a precedence lower than the newest operand.
@@ -208,11 +202,12 @@ class MyParser():
                         return None
                     op_stack.pop()
 
-                    lengths = stack_lengths.pop()
-                    if lengths[OP_ST] != 0:
-                        print 'Syntax error!'
+                    if effect[-1] < 0:
+                        print 'Syntax error somewhere within parens.'
                         return None
-                    stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + lengths[NUM_ST]
+
+                    effect[-2] += effect[-1]
+                    effect.pop()
 
                 elif tk_type == ',':
                     if not args_count_stack:
@@ -220,14 +215,50 @@ class MyParser():
                         return None
 
                     args_count_stack[-1] = args_count_stack[-1] + 1
-                    stack_lengths[-2][NUM_ST] += stack_lengths[-1][NUM_ST]
-                    stack_lengths[-1] = [0, 0] # reset their lengths, not push a new frame
-                    # We don't push ',' on to the stack.
+                    effect[-2] += effect[-1]
+                    effect[-1] = 0
+
+                    i = i + 1
+                    tk_type, value = tk_list[i]
+
+                    if tk_type == ')' or tk_type == 'EOL':
+                        print 'Bad function call.'
+                        return None
+                    continue
+
                 else:
                     if tk_type in self.functions:
-                        args_count_stack.append(1)
+                        # Try digesting the '(' and first arg(if it exists) of
+                        # the function
+                        op_stack.append(tk_type)
+                        effect[-1] += self.effect_of[tk_type]
+
+                        if i + 3 >= len(tk_list):
+                            print 'Malformed function call.'
+                            return None
+
+                        i = i + 1
+                        tk_type, value = tk_list[i]
+
+                        if tk_type != '(':
+                            print 'Malformed function call.'
+                            return None
+
+                        op_stack.append(tk_type)
+                        effect.append(0)
+                        i = i + 1
+
+                        tk_type, value = tk_list[i]
+                        
+                        if tk_type == ')':
+                            args_count_stack.append(0)
+                        else:
+                            args_count_stack.append(1)
+
+                        continue
+
                     op_stack.append(tk_type)
-                    stack_lengths[-1][OP_ST] = stack_lengths[-1][OP_ST] + 1
+                    effect[-1] += self.effect_of[tk_type]
 
             i = i + 1
 
@@ -413,6 +444,7 @@ class MyParser():
             self.functions[func_name] = num_args
             self.precedence[func_name] = HIGHEST_PREC
             self.args_needed[func_name] = num_args
+            self.effect_of[func_name] = 1 - num_args
             if not def_stack:
                 typ, val = pseudo_num_stack.pop()
                 if typ == 'C':

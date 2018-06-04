@@ -125,7 +125,7 @@ assert(parser.parse(lexer.get_token_list('17 * badd()')) == 34)
 assert(parser.parse(lexer.get_token_list('def this(a, b) = a - b')) == None)
 assert(parser.parse(lexer.get_token_list('this(1 3)')) == None)
 assert(parser.parse(lexer.get_token_list('this(1,)')) == None)
-assert(parser.parse(lexer.get_token_list('this(1 3,)')) == -2)  # Hahaha this thing works! Need to fix this later
+# assert(parser.parse(lexer.get_token_list('this(1 3,)')) == -2)  # Well it's fixed now
 
 print '\nMore nested function calls\n'
 assert(parser.parse(lexer.get_token_list('def gg(a, b, c) = goodboy() * badd() /4 * a')) == None)
