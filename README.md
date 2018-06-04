@@ -20,8 +20,7 @@ That should start it and you will see a prompt ```>>```. Type in whatever expres
 ## Oddities
 These work:  
 * ```>>  3 4 +```
-* ```>>  pow(2 3,)```  
-In general, you can misplace arguments, put commas in the wrong place, etc. In this implementation, only the number of arguments is verified(counting the args and then counting the commas), not the exact position of the arguments. I will fix
+In general, you can misplace arguments, put commas in the wrong place (it depends), etc. In this implementation, only the number of arguments is verified(counting the args and then counting the commas), not the exact position of the arguments. I will fix
 this later if time permits.
 
 ## Running Tests
