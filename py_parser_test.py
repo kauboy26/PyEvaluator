@@ -20,7 +20,7 @@ class MyParser():
         # denotes the number of arguments needed when that function is performed.
         self.args_needed =\
             {'*': 2, '/': 2, '%':2, '+': 2, '-': 2, '=': 2,
-            'sin':1, 'pow':2}
+            'sin':1, 'pow':2, 'EOL': 0}
 
         self.functions = {'sin':1, 'pow':2}
 
@@ -102,6 +102,9 @@ class MyParser():
         num_stack = []
 
         # op_s_len and the num_stack length get reset on encountering '(' or ','. See note 3
+        stack_lengths = [[0, 0]]
+        OP_ST = 0
+        NUM_ST = 1
         op_stack_length = 0
         num_stack_length = 0
 
@@ -117,7 +120,7 @@ class MyParser():
 
             if tk_type == 'NUM':
                 num_stack.append(value)
-                num_stack_length = num_stack_length + 1
+                stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
             else:
                 if tk_type == 'ID':
                     if value in self.functions:
@@ -125,40 +128,26 @@ class MyParser():
                     else:
                         # found a variable, go to next iteration.
                         num_stack.append(value)
-                        num_stack_length = num_stack_length + 1
+                        stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
                         i = i + 1
                         continue
 
                 if tk_type == '(':
                     op_stack.append(tk_type)
-                    op_stack_length = 0
-                    num_stack_length = 0
+                    stack_lengths.append([0, 0])
                     i = i + 1
                     continue
 
-                if (tk_type == '-' or tk_type == '+') and (op_stack_length == num_stack_length):
-                    # This solves the a  = -2 problem. See note 3
-                    if tk_type == '-': 
-                        num_stack.append(-1)
-                        num_stack_length = num_stack_length + 1
-                        tk_type = '*'
-                    else:
-                        i = i + 1
-                        continue
-
-                while op_stack and op_stack[-1] in self.args_needed\
-                    and precedence[tk_type] <= precedence[op_stack[-1]]:  # See note 4 for op_stack[-1] in precedence
+                while op_stack and precedence[tk_type] <= precedence[op_stack[-1]]\
+                    and op_stack[-1] in self.args_needed\
+                    and stack_lengths[-1][NUM_ST] >= self.args_needed[op_stack[-1]]: # TODO bug in f(1, 2)
+                    # See note 4 for op_stack[-1] in self.args_needed
                     # When I am looking at the current operand token,
                     # if it has a lower precedence then the topmost thing
                     # on the operand stack, keep popping off the num and op stacks
                     # and evaluate and push
                     operation = op_stack.pop()
-                    op_stack_length = op_stack_length - 1
-
-                    if len(num_stack) < self.args_needed[operation]:
-                        print 'Not enough arguments to the function / operation:', operation, '\nNeeded',\
-                            self.args_needed[operation], 'but found', len(num_stack)
-                        return None
+                    stack_lengths[-1][OP_ST] = stack_lengths[-1][OP_ST] - 1
 
                     if operation in self.functions:
                         if args_count_stack[-1] == self.args_needed[operation]\
@@ -188,14 +177,27 @@ class MyParser():
                     if not was_success:
                         return None
                     
-                    num_stack_length = num_stack_length - self.args_needed[operation]
+                    stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] - self.args_needed[operation]
                     was_success, new_val = self.perform_operation(operands, operation)
 
                     if not was_success:
                         return None
 
                     num_stack.append(new_val)
-                    num_stack_length = num_stack_length + 1
+                    stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
+
+
+                if (tk_type == '-' or tk_type == '+')\
+                    and (stack_lengths[-1][OP_ST] >= stack_lengths[-1][NUM_ST]):
+                    # This solves the a  = -2 problem. See note 3
+                    print 'called - + converter'
+                    if tk_type == '-': 
+                        num_stack.append(-1)
+                        stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + 1
+                        tk_type = '*'
+                    else:
+                        i = i + 1
+                        continue
 
                 # At this point, either the operand stack is empty, or the top most
                 # operand has a precedence lower than the newest operand.
@@ -206,20 +208,26 @@ class MyParser():
                         return None
                     op_stack.pop()
 
+                    lengths = stack_lengths.pop()
+                    if lengths[OP_ST] != 0:
+                        print 'Syntax error!'
+                        return None
+                    stack_lengths[-1][NUM_ST] = stack_lengths[-1][NUM_ST] + lengths[NUM_ST]
+
                 elif tk_type == ',':
                     if not args_count_stack:
                         print '"," must appear to separate function arguments.'
                         return None
 
                     args_count_stack[-1] = args_count_stack[-1] + 1
-                    op_stack_length = 0  # INITIALLY FORGOT THIS, SOURCE OF BUG. Note 3
-                    num_stack_length = 0
+                    stack_lengths[-2][NUM_ST] += stack_lengths[-1][NUM_ST]
+                    stack_lengths[-1] = [0, 0] # reset their lengths, not push a new frame
                     # We don't push ',' on to the stack.
                 else:
                     if tk_type in self.functions:
                         args_count_stack.append(1)
                     op_stack.append(tk_type)
-                    op_stack_length = op_stack_length + 1
+                    stack_lengths[-1][OP_ST] = stack_lengths[-1][OP_ST] + 1
 
             i = i + 1
 

@@ -145,6 +145,15 @@ assert(parser.parse(lexer.get_token_list('iamapsychoFORSURE(2---3, ---3, 3)')) =
 assert(parser.parse(lexer.get_token_list('def thetruth(god, is, great) = whato(god, -god + -god, god)')) == None)
 assert(parser.parse(lexer.get_token_list('thetruth(1, 1, 1)')) == 2)
 
+print '\nMore tests for functions'
+assert(parser.parse(lexer.get_token_list('def ok() = 1')) == None)
+assert(parser.parse(lexer.get_token_list('ok()')) == 1)
+assert(parser.parse(lexer.get_token_list('1 + ok()')) == 2)
+assert(parser.parse(lexer.get_token_list('ok() + 1')) == 2)
+assert(parser.parse(lexer.get_token_list('ok() * 5 + ok()')) == 6)
+assert(parser.parse(lexer.get_token_list('ok(ok())')) == None)
+assert(parser.parse(lexer.get_token_list('ok(1)')) == None)
+
 print '\nEasy one: 2 + 2 = ?'
 assert(parser.parse(lexer.get_token_list('2 + 2')) == 4)
 
